@@ -22,7 +22,7 @@ import (
 
 const namespace = "veidemann"
 
-var Collectors = map[string]prometheus.Collector{
+var collectors = map[string]prometheus.Collector{
 	"uri.requests": prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: namespace,
 		Subsystem: "uri",
@@ -107,8 +107,8 @@ var Collectors = map[string]prometheus.Collector{
 }
 
 func registerCollectors() {
-	for i := range Collectors {
-		collector := Collectors[i]
+	for i := range collectors {
+		collector := collectors[i]
 		prometheus.MustRegister(collector)
 	}
 }

@@ -30,7 +30,7 @@ const (
 	defaultDbPassword    = "admin"
 )
 
-/* Config configurations for exporter */
+// Config configurations for exporter
 type Config struct {
 	ListenAddress string
 	ListenPort    int
@@ -43,7 +43,7 @@ type Config struct {
 	DbName     string
 }
 
-/* NewConfig creates a new config object from command line args */
+// NewConfig creates a new config object from command line args
 func NewConfig() *Config {
 	c := &Config{}
 

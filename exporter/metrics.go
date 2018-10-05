@@ -25,17 +25,23 @@ import (
 	"strings"
 )
 
-type Collector struct {
+type exporter struct {
 	conn *Connection
 }
 
-func New(connection *Connection) *Collector {
-	return &Collector{
+// Exporter listens for changes to Veidemann database and exposes Prometheus metrics
+type Exporter interface {
+	Run()
+}
+
+// New creates a new Exporter
+func New(connection *Connection) Exporter {
+	return &exporter{
 		conn: connection,
 	}
 }
 
-func (c *Collector) Run() {
+func (c *exporter) Run() {
 	crawlLog, err := r.Table("crawl_log").Changes().Run(c.conn.DbSession)
 	if err != nil {
 		log.Fatal(err)
@@ -53,49 +59,49 @@ func (c *Collector) Run() {
 	pageLog.Listen(pageLogChannel)
 }
 
-func (c *Collector) collectCrawlLog(ch chan map[string]interface{}) {
+func (c *exporter) collectCrawlLog(ch chan map[string]interface{}) {
 	for {
 		response := <-ch
 		if response == nil {
 			panic("Connection closed")
 		}
 
-		new_val := response["new_val"].(map[string]interface{})
+		newVal := response["new_val"].(map[string]interface{})
 
-		Collectors["uri.requests"].(prometheus.Counter).Inc()
-		if new_val["error"] != nil {
-			Collectors["uri.requests.failed"].(prometheus.Counter).Inc()
+		collectors["uri.requests"].(prometheus.Counter).Inc()
+		if newVal["error"] != nil {
+			collectors["uri.requests.failed"].(prometheus.Counter).Inc()
 		}
-		Collectors["uri.statuscode"].(*prometheus.CounterVec).WithLabelValues(fmt.Sprint(new_val["statusCode"])).Inc()
-		Collectors["uri.recordtype"].(*prometheus.CounterVec).WithLabelValues(fmt.Sprint(new_val["recordType"])).Inc()
-		if mime, ok := getNormalizedMimeType(new_val); ok {
-			Collectors["uri.mime"].(*prometheus.CounterVec).WithLabelValues(mime).Inc()
+		collectors["uri.statuscode"].(*prometheus.CounterVec).WithLabelValues(fmt.Sprint(newVal["statusCode"])).Inc()
+		collectors["uri.recordtype"].(*prometheus.CounterVec).WithLabelValues(fmt.Sprint(newVal["recordType"])).Inc()
+		if mime, ok := getNormalizedMimeType(newVal); ok {
+			collectors["uri.mime"].(*prometheus.CounterVec).WithLabelValues(mime).Inc()
 		}
-		if new_val["fetchTimeMs"] != nil {
-			Collectors["uri.fetchtime"].(prometheus.Summary).Observe(new_val["fetchTimeMs"].(float64) / 1000)
+		if newVal["fetchTimeMs"] != nil {
+			collectors["uri.fetchtime"].(prometheus.Summary).Observe(newVal["fetchTimeMs"].(float64) / 1000)
 		}
-		if new_val["size"] != nil {
-			Collectors["uri.size"].(prometheus.Summary).Observe(new_val["size"].(float64))
+		if newVal["size"] != nil {
+			collectors["uri.size"].(prometheus.Summary).Observe(newVal["size"].(float64))
 		}
 	}
 }
 
-func (c *Collector) collectPageLog(ch chan map[string]interface{}) {
+func (c *exporter) collectPageLog(ch chan map[string]interface{}) {
 	for {
 		response := <-ch
 		if response == nil {
 			panic("Connection closed")
 		}
 
-		new_val := response["new_val"].(map[string]interface{})
+		newVal := response["new_val"].(map[string]interface{})
 
-		Collectors["page.requests"].(prometheus.Counter).Inc()
-		if new_val["outlink"] != nil {
-			outlinks := new_val["outlink"].([]interface{})
-			Collectors["page.outlinks"].(prometheus.Summary).Observe(float64(len(outlinks)))
+		collectors["page.requests"].(prometheus.Counter).Inc()
+		if newVal["outlink"] != nil {
+			outlinks := newVal["outlink"].([]interface{})
+			collectors["page.outlinks"].(prometheus.Summary).Observe(float64(len(outlinks)))
 		}
-		if new_val["resource"] != nil {
-			resources := new_val["resource"].([]interface{})
+		if newVal["resource"] != nil {
+			resources := newVal["resource"].([]interface{})
 			var cached float64
 			var notCached float64
 			for _, resource := range resources {
@@ -105,9 +111,9 @@ func (c *Collector) collectPageLog(ch chan map[string]interface{}) {
 					notCached++
 				}
 			}
-			Collectors["page.resources"].(prometheus.Summary).Observe(cached + notCached)
-			Collectors["page.resources.cache.hit"].(prometheus.Summary).Observe(cached)
-			Collectors["page.resources.cache.miss"].(prometheus.Summary).Observe(notCached)
+			collectors["page.resources"].(prometheus.Summary).Observe(cached + notCached)
+			collectors["page.resources.cache.hit"].(prometheus.Summary).Observe(cached)
+			collectors["page.resources.cache.miss"].(prometheus.Summary).Observe(notCached)
 		}
 	}
 }
@@ -118,12 +124,10 @@ func getNormalizedMimeType(doc map[string]interface{}) (string, bool) {
 		i := strings.Index(s, ";")
 		if i > 0 {
 			return s[:i], true
-		} else {
-			return s, true
 		}
-	} else {
-		return "", false
+		return s, true
 	}
+	return "", false
 }
 
 func init() {

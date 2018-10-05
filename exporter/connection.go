@@ -42,7 +42,7 @@ func NewConnection(dbHost string, dbPort int, dbUser string, dbPassword string, 
 	return c
 }
 
-// connect establishes connections
+// Connect establishes the databse connection
 func (c *Connection) Connect() error {
 	// Set up database connection
 	if c.DbConnectOpts.Database == "mock" {

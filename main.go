@@ -37,8 +37,8 @@ func main() {
 	config := NewConfig()
 	conn := exporter.NewConnection(config.DbHost, config.DbPort, config.DbUser, config.DbPassword, config.DbName)
 	conn.Connect()
-	collector := exporter.New(conn)
-	collector.Run()
+	exp := exporter.New(conn)
+	exp.Run()
 
 	// Serve metrics
 	http.Handle(config.MetricPath, promhttp.Handler())
