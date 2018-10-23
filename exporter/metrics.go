@@ -19,7 +19,6 @@ package exporter
 import (
 	"fmt"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/common/version"
 	r "gopkg.in/gorethink/gorethink.v4"
 	"log"
 	"strings"
@@ -36,30 +35,32 @@ type Exporter interface {
 
 // New creates a new Exporter
 func New(connection *Connection) Exporter {
-	return &exporter{
+	e := &exporter{
 		conn: connection,
 	}
+	e.registerCollectors()
+	return e
 }
 
-func (c *exporter) Run() {
-	crawlLog, err := r.Table("crawl_log").Changes().Run(c.conn.DbSession)
+func (e *exporter) Run() {
+	crawlLog, err := r.Table("crawl_log").Changes().Run(e.conn.DbSession)
 	if err != nil {
 		log.Fatal(err)
 	}
 	crawlLogChannel := make(chan map[string]interface{})
-	go c.collectCrawlLog(crawlLogChannel)
+	go e.collectCrawlLog(crawlLogChannel)
 	crawlLog.Listen(crawlLogChannel)
 
-	pageLog, err := r.Table("page_log").Changes().Run(c.conn.DbSession)
+	pageLog, err := r.Table("page_log").Changes().Run(e.conn.DbSession)
 	if err != nil {
 		log.Fatal(err)
 	}
 	pageLogChannel := make(chan map[string]interface{})
-	go c.collectPageLog(pageLogChannel)
+	go e.collectPageLog(pageLogChannel)
 	pageLog.Listen(pageLogChannel)
 }
 
-func (c *exporter) collectCrawlLog(ch chan map[string]interface{}) {
+func (e *exporter) collectCrawlLog(ch chan map[string]interface{}) {
 	for {
 		response := <-ch
 		if response == nil {
@@ -86,7 +87,7 @@ func (c *exporter) collectCrawlLog(ch chan map[string]interface{}) {
 	}
 }
 
-func (c *exporter) collectPageLog(ch chan map[string]interface{}) {
+func (e *exporter) collectPageLog(ch chan map[string]interface{}) {
 	for {
 		response := <-ch
 		if response == nil {
@@ -99,6 +100,7 @@ func (c *exporter) collectPageLog(ch chan map[string]interface{}) {
 		if newVal["outlink"] != nil {
 			outlinks := newVal["outlink"].([]interface{})
 			collectors["page.outlinks"].(prometheus.Summary).Observe(float64(len(outlinks)))
+			collectors["page.links"].(*prometheus.CounterVec).WithLabelValues("outlinks").Add(float64(len(outlinks)))
 		}
 		if newVal["resource"] != nil {
 			resources := newVal["resource"].([]interface{})
@@ -114,8 +116,22 @@ func (c *exporter) collectPageLog(ch chan map[string]interface{}) {
 			collectors["page.resources"].(prometheus.Summary).Observe(cached + notCached)
 			collectors["page.resources.cache.hit"].(prometheus.Summary).Observe(cached)
 			collectors["page.resources.cache.miss"].(prometheus.Summary).Observe(notCached)
+			collectors["page.links"].(*prometheus.CounterVec).WithLabelValues("resources_notcached").Add(notCached)
+			collectors["page.links"].(*prometheus.CounterVec).WithLabelValues("resources_cached").Add(cached)
 		}
 	}
+}
+
+func (e *exporter) collectUriQueueLength() float64 {
+	queueCount, err := r.Table("uri_queue").Count().Run(e.conn.DbSession)
+	if err != nil {
+		log.Fatal(err)
+	}
+	var result float64
+	if err := queueCount.One(&result); err != nil {
+		log.Fatal(err)
+	}
+	return result
 }
 
 func getNormalizedMimeType(doc map[string]interface{}) (string, bool) {
@@ -128,9 +144,4 @@ func getNormalizedMimeType(doc map[string]interface{}) (string, bool) {
 		return s, true
 	}
 	return "", false
-}
-
-func init() {
-	prometheus.MustRegister(version.NewCollector("veidemann_exporter"))
-	registerCollectors()
 }

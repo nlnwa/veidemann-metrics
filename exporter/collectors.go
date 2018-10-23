@@ -18,6 +18,7 @@ package exporter
 
 import (
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/common/version"
 )
 
 const namespace = "veidemann"
@@ -104,11 +105,30 @@ var collectors = map[string]prometheus.Collector{
 			Name:      "resources_cache_miss_total",
 			Help:      "Resources loaded from origin server per page",
 		}),
+	"page.links": prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: namespace,
+			Subsystem: "page",
+			Name:      "links_total",
+			Help:      "Total number of outlinks and resources",
+		},
+		[]string{"type"}),
 }
 
-func registerCollectors() {
+func (e *exporter) registerCollectors() {
+	prometheus.MustRegister(version.NewCollector("veidemann_exporter"))
+
 	for i := range collectors {
 		collector := collectors[i]
 		prometheus.MustRegister(collector)
 	}
+
+	prometheus.MustRegister(prometheus.NewGaugeFunc(
+		prometheus.GaugeOpts{
+			Namespace: namespace,
+			Subsystem: "uri",
+			Name:      "queue_count",
+			Help:      "Number of uris in queue.",
+		},
+		func() float64 { return e.collectUriQueueLength() }))
 }
