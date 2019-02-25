@@ -122,6 +122,15 @@ var collectors = map[string]prometheus.Collector{
 		},
 		[]string{"job_name", "status"},
 	),
+	"job.size": prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Namespace: namespace,
+			Subsystem: "job",
+			Name:      "size_total",
+			Help:      "Sizes for running jobs",
+		},
+		[]string{"job_name", "type"},
+	),
 }
 
 func (e *exporter) registerCollectors() {
