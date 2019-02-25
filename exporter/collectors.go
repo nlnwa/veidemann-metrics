@@ -113,6 +113,15 @@ var collectors = map[string]prometheus.Collector{
 			Help:      "Total number of outlinks and resources",
 		},
 		[]string{"type"}),
+	"job.status": prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Namespace: namespace,
+			Subsystem: "job",
+			Name:      "status_total",
+			Help:      "Status for running jobs",
+		},
+		[]string{"job_name", "status"},
+	),
 }
 
 func (e *exporter) registerCollectors() {
