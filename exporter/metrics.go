@@ -160,7 +160,7 @@ func (e *exporter) collectJobStatusJob() {
 	}
 }
 
-func(e *exporter) collectJobStatus() {
+func (e *exporter) collectJobStatus() {
 	jobStates, err := r.Table("job_executions").
 		GetAllByIndex("state", "RUNNING").
 		EqJoin("jobId", r.Table("config")).Without(map[string]interface{}{"right": "id"}).Zip().
@@ -218,21 +218,23 @@ func(e *exporter) collectJobStatus() {
 
 	var jobState map[string]interface{}
 	for jobStates.Next(&jobState) {
-		c := collectors["job.status"].(*prometheus.GaugeVec)
-		c.WithLabelValues(jobState["name"].(string), "ABORTED_MANUAL").Set(jobState["ABORTED_MANUAL"].(float64))
-		c.WithLabelValues(jobState["name"].(string), "ABORTED_SIZE").Set(jobState["ABORTED_SIZE"].(float64))
-		c.WithLabelValues(jobState["name"].(string), "ABORTED_TIMEOUT").Set(jobState["ABORTED_TIMEOUT"].(float64))
-		c.WithLabelValues(jobState["name"].(string), "CREATED").Set(jobState["CREATED"].(float64))
-		c.WithLabelValues(jobState["name"].(string), "FAILED").Set(jobState["FAILED"].(float64))
-		c.WithLabelValues(jobState["name"].(string), "FETCHING").Set(jobState["FETCHING"].(float64))
-		c.WithLabelValues(jobState["name"].(string), "FINISHED").Set(jobState["FINISHED"].(float64))
-		c.WithLabelValues(jobState["name"].(string), "SLEEPING").Set(jobState["SLEEPING"].(float64))
-		c.WithLabelValues(jobState["name"].(string), "documentsCrawled").Set(jobState["documentsCrawled"].(float64))
-		c.WithLabelValues(jobState["name"].(string), "documentsDenied").Set(jobState["documentsDenied"].(float64))
-		c.WithLabelValues(jobState["name"].(string), "documentsFailed").Set(jobState["documentsFailed"].(float64))
-		c.WithLabelValues(jobState["name"].(string), "documentsOutOfScope").Set(jobState["documentsOutOfScope"].(float64))
-		c.WithLabelValues(jobState["name"].(string), "documentsRetried").Set(jobState["documentsRetried"].(float64))
-		c.WithLabelValues(jobState["name"].(string), "urisCrawled").Set(jobState["urisCrawled"].(float64))
-		c.WithLabelValues(jobState["name"].(string), "bytesCrawled").Set(jobState["bytesCrawled"].(float64))
+		c1 := collectors["job.status"].(*prometheus.GaugeVec)
+		c1.WithLabelValues(jobState["name"].(string), "ABORTED_MANUAL").Set(jobState["ABORTED_MANUAL"].(float64))
+		c1.WithLabelValues(jobState["name"].(string), "ABORTED_SIZE").Set(jobState["ABORTED_SIZE"].(float64))
+		c1.WithLabelValues(jobState["name"].(string), "ABORTED_TIMEOUT").Set(jobState["ABORTED_TIMEOUT"].(float64))
+		c1.WithLabelValues(jobState["name"].(string), "CREATED").Set(jobState["CREATED"].(float64))
+		c1.WithLabelValues(jobState["name"].(string), "FAILED").Set(jobState["FAILED"].(float64))
+		c1.WithLabelValues(jobState["name"].(string), "FETCHING").Set(jobState["FETCHING"].(float64))
+		c1.WithLabelValues(jobState["name"].(string), "FINISHED").Set(jobState["FINISHED"].(float64))
+		c1.WithLabelValues(jobState["name"].(string), "SLEEPING").Set(jobState["SLEEPING"].(float64))
+
+		c2 := collectors["job.size"].(*prometheus.GaugeVec)
+		c2.WithLabelValues(jobState["name"].(string), "documentsCrawled").Set(jobState["documentsCrawled"].(float64))
+		c2.WithLabelValues(jobState["name"].(string), "documentsDenied").Set(jobState["documentsDenied"].(float64))
+		c2.WithLabelValues(jobState["name"].(string), "documentsFailed").Set(jobState["documentsFailed"].(float64))
+		c2.WithLabelValues(jobState["name"].(string), "documentsOutOfScope").Set(jobState["documentsOutOfScope"].(float64))
+		c2.WithLabelValues(jobState["name"].(string), "documentsRetried").Set(jobState["documentsRetried"].(float64))
+		c2.WithLabelValues(jobState["name"].(string), "urisCrawled").Set(jobState["urisCrawled"].(float64))
+		c2.WithLabelValues(jobState["name"].(string), "bytesCrawled").Set(jobState["bytesCrawled"].(float64))
 	}
 }
