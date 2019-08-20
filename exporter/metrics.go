@@ -208,7 +208,7 @@ func (e *exporter) collectJobStatus() {
 				}).
 				Merge(map[string]interface{}{"name": d.Field("meta").Field("name"),}).
 				Do(func(doc r.Term) interface{} {
-					return r.Branch(doc.Field("state").Eq("RUNNING"),
+					return r.Branch(r.Not(doc.HasFields("CREATED")),
 						doc.Merge(func(d r.Term) interface{} {
 							return r.Table("executions").
 								Between([]r.Term{d.Field("jobExecutionId"), r.MinVal}, []r.Term{d.Field("jobExecutionId"), r.MaxVal}, r.BetweenOpts{
