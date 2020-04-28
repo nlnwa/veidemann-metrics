@@ -19,7 +19,7 @@ package exporter
 import (
 	"fmt"
 	"github.com/prometheus/client_golang/prometheus"
-	r "gopkg.in/gorethink/gorethink.v4"
+	r "gopkg.in/rethinkdb/rethinkdb-go.v5"
 	"log"
 	"strings"
 	"time"
