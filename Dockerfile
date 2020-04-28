@@ -1,14 +1,16 @@
-FROM golang:alpine as builder
+FROM golang:1.13-buster as build
 
-WORKDIR /go/src/github.com/nlnwa/veidemann-metrics
+WORKDIR /go/src/app
+
+COPY go.mod go.sum ./
+RUN go mod download
+
 COPY . .
+RUN go build -o /go/bin/app
 
-# Compile the binary statically, so it can be run without libraries.
-RUN CGO_ENABLED=0 GOOS=linux go install -a -ldflags '-extldflags "-s -w -static"' .
+FROM gcr.io/distroless/base-debian10
+COPY --from=build /go/bin/app /
 
-FROM scratch
-COPY --from=builder /go/bin/veidemann-metrics /usr/local/bin/veidemann-metrics
-
+ENTRYPOINT ["/app"]
 EXPOSE 9301
 
-ENTRYPOINT ["/usr/local/bin/veidemann-metrics"]
