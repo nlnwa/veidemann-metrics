@@ -18,7 +18,7 @@ package exporter
 
 import (
 	"fmt"
-	r "gopkg.in/gorethink/gorethink.v4"
+	r "gopkg.in/rethinkdb/rethinkdb-go.v5"
 	"log"
 )
 

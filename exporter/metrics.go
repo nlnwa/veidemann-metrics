@@ -19,7 +19,7 @@ package exporter
 import (
 	"fmt"
 	"github.com/prometheus/client_golang/prometheus"
-	r "gopkg.in/gorethink/gorethink.v4"
+	r "gopkg.in/rethinkdb/rethinkdb-go.v5"
 	"log"
 	"strings"
 	"time"
@@ -206,7 +206,7 @@ func (e *exporter) collectJobStatus() {
 					"bytesCrawled":        0,
 					"state":               "UNDEFINED",
 				}).
-				Merge(map[string]interface{}{"name": d.Field("meta").Field("name"),}).
+				Merge(map[string]interface{}{"name": d.Field("meta").Field("name")}).
 				Do(func(doc r.Term) interface{} {
 					return r.Branch(r.Not(doc.HasFields("CREATED")),
 						doc.Merge(func(d r.Term) interface{} {
@@ -232,25 +232,43 @@ func (e *exporter) collectJobStatus() {
 										"urisCrawled":         doc.Field("urisCrawled").Default(0),
 										"bytesCrawled":        doc.Field("bytesCrawled").Default(0),
 									}
-								}).Reduce(func(left, right r.Term) interface{} {
-								return map[string]interface{}{
-									"ABORTED_MANUAL":      left.Field("ABORTED_MANUAL").Add(right.Field("ABORTED_MANUAL")),
-									"ABORTED_SIZE":        left.Field("ABORTED_SIZE").Add(right.Field("ABORTED_SIZE")),
-									"ABORTED_TIMEOUT":     left.Field("ABORTED_TIMEOUT").Add(right.Field("ABORTED_TIMEOUT")),
-									"CREATED":             left.Field("CREATED").Add(right.Field("CREATED")),
-									"FAILED":              left.Field("FAILED").Add(right.Field("FAILED")),
-									"FETCHING":            left.Field("FETCHING").Add(right.Field("FETCHING")),
-									"FINISHED":            left.Field("FINISHED").Add(right.Field("FINISHED")),
-									"SLEEPING":            left.Field("SLEEPING").Add(right.Field("SLEEPING")),
-									"documentsCrawled":    left.Field("documentsCrawled").Add(right.Field("documentsCrawled")),
-									"documentsDenied":     left.Field("documentsDenied").Add(right.Field("documentsDenied")),
-									"documentsFailed":     left.Field("documentsFailed").Add(right.Field("documentsFailed")),
-									"documentsOutOfScope": left.Field("documentsOutOfScope").Add(right.Field("documentsOutOfScope")),
-									"documentsRetried":    left.Field("documentsRetried").Add(right.Field("documentsRetried")),
-									"urisCrawled":         left.Field("urisCrawled").Add(right.Field("urisCrawled")),
-									"bytesCrawled":        left.Field("bytesCrawled").Add(right.Field("bytesCrawled")),
-								}
-							})
+								}).
+								Reduce(func(left, right r.Term) interface{} {
+									return map[string]interface{}{
+										"ABORTED_MANUAL":      left.Field("ABORTED_MANUAL").Add(right.Field("ABORTED_MANUAL")),
+										"ABORTED_SIZE":        left.Field("ABORTED_SIZE").Add(right.Field("ABORTED_SIZE")),
+										"ABORTED_TIMEOUT":     left.Field("ABORTED_TIMEOUT").Add(right.Field("ABORTED_TIMEOUT")),
+										"CREATED":             left.Field("CREATED").Add(right.Field("CREATED")),
+										"FAILED":              left.Field("FAILED").Add(right.Field("FAILED")),
+										"FETCHING":            left.Field("FETCHING").Add(right.Field("FETCHING")),
+										"FINISHED":            left.Field("FINISHED").Add(right.Field("FINISHED")),
+										"SLEEPING":            left.Field("SLEEPING").Add(right.Field("SLEEPING")),
+										"documentsCrawled":    left.Field("documentsCrawled").Add(right.Field("documentsCrawled")),
+										"documentsDenied":     left.Field("documentsDenied").Add(right.Field("documentsDenied")),
+										"documentsFailed":     left.Field("documentsFailed").Add(right.Field("documentsFailed")),
+										"documentsOutOfScope": left.Field("documentsOutOfScope").Add(right.Field("documentsOutOfScope")),
+										"documentsRetried":    left.Field("documentsRetried").Add(right.Field("documentsRetried")),
+										"urisCrawled":         left.Field("urisCrawled").Add(right.Field("urisCrawled")),
+										"bytesCrawled":        left.Field("bytesCrawled").Add(right.Field("bytesCrawled")),
+									}
+								}).
+								Default(map[string]interface{}{
+									"ABORTED_MANUAL":      0,
+									"ABORTED_SIZE":        0,
+									"ABORTED_TIMEOUT":     0,
+									"CREATED":             0,
+									"FAILED":              0,
+									"FETCHING":            0,
+									"FINISHED":            0,
+									"SLEEPING":            0,
+									"documentsCrawled":    0,
+									"documentsDenied":     0,
+									"documentsFailed":     0,
+									"documentsOutOfScope": 0,
+									"documentsRetried":    0,
+									"urisCrawled":         0,
+									"bytesCrawled":        0,
+								})
 						}),
 						doc)
 				})
