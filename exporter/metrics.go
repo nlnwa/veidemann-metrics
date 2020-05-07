@@ -19,7 +19,7 @@ package exporter
 import (
 	"fmt"
 	"github.com/prometheus/client_golang/prometheus"
-	r "gopkg.in/rethinkdb/rethinkdb-go.v5"
+	r "gopkg.in/rethinkdb/rethinkdb-go.v6"
 	"log"
 	"strings"
 	"time"
@@ -82,10 +82,14 @@ func (e *exporter) collectCrawlLog(ch chan map[string]interface{}) {
 			collectors["uri.mime"].(*prometheus.CounterVec).WithLabelValues(mime).Inc()
 		}
 		if newVal["fetchTimeMs"] != nil {
-			collectors["uri.fetchtime"].(prometheus.Summary).Observe(newVal["fetchTimeMs"].(float64) / 1000)
+			if fetchTimeMs, ok := newVal["fetchTimeMs"].(float64); ok {
+				collectors["uri.fetchtime"].(prometheus.Summary).Observe(fetchTimeMs / 1000)
+			}
 		}
 		if newVal["size"] != nil {
-			collectors["uri.size"].(prometheus.Summary).Observe(newVal["size"].(float64))
+			if size, ok := newVal["size"].(float64); ok {
+				collectors["uri.size"].(prometheus.Summary).Observe(size)
+			}
 		}
 	}
 }
