@@ -17,11 +17,13 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"github.com/nlnwa/veidemann-metrics/exporter"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"log"
 	"net/http"
+	"time"
 )
 
 const indexContent = `<html>
@@ -36,7 +38,11 @@ const indexContent = `<html>
 func main() {
 	config := NewConfig()
 	conn := exporter.NewConnection(config.DbHost, config.DbPort, config.DbUser, config.DbPassword, config.DbName)
-	conn.Connect()
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+	defer cancel()
+	if err := conn.Connect(ctx); err != nil {
+		log.Fatal(err)
+	}
 	exp := exporter.New(conn)
 	exp.Run()
 

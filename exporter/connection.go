@@ -17,9 +17,12 @@
 package exporter
 
 import (
+	"context"
 	"fmt"
-	r "gopkg.in/rethinkdb/rethinkdb-go.v5"
+	r "gopkg.in/rethinkdb/rethinkdb-go.v6"
 	"log"
+	"sort"
+	"time"
 )
 
 // Connection holds the connections for Veidemann database
@@ -37,26 +40,105 @@ func NewConnection(dbHost string, dbPort int, dbUser string, dbPassword string, 
 			Password:   dbPassword,
 			Database:   dbName,
 			NumRetries: 10,
+			Timeout:    10 * time.Minute,
 		},
 	}
 	return c
 }
 
 // Connect establishes the databse connection
-func (c *Connection) Connect() error {
-	// Set up database connection
-	if c.DbConnectOpts.Database == "mock" {
-		c.DbSession = r.NewMock(c.DbConnectOpts)
-	} else {
-		dbSession, err := r.Connect(c.DbConnectOpts)
-		if err != nil {
-			log.Fatalf("fail to connect to database: %v", err)
-			return err
-		}
-		c.DbSession = dbSession
+func (c *Connection) Connect(ctx context.Context) error {
+	if err := c.doConnect(ctx); err != nil {
+		return err
+	}
+
+	if err := c.checkDbExists(ctx); err != nil {
+		return err
+	}
+
+	if err := c.checkTablesExists(ctx); err != nil {
+		return err
 	}
 
 	log.Printf("Connected to DB at: %s", c.DbConnectOpts.Address)
-
 	return nil
+}
+
+func (c *Connection) doConnect(ctx context.Context) error {
+	// Set up database connection
+	if c.DbConnectOpts.Database == "mock" {
+		c.DbSession = r.NewMock(c.DbConnectOpts)
+		return nil
+	} else {
+		var err error
+		var dbSession *r.Session
+		for {
+			select {
+			case <-ctx.Done():
+				return err
+			default:
+				dbSession, err = r.Connect(c.DbConnectOpts)
+				if err == nil {
+					c.DbSession = dbSession
+					return nil
+				}
+				time.Sleep(5 * time.Second)
+			}
+		}
+	}
+}
+
+func (c *Connection) checkDbExists(ctx context.Context) error {
+	var err error
+	var cursor *r.Cursor
+	for {
+		select {
+		case <-ctx.Done():
+			return fmt.Errorf("could not find database veidemann")
+		default:
+			if cursor, err = r.DBList().Run(c.DbSession); err == nil {
+				var dbNames []string
+				if err = cursor.All(&dbNames); err == nil {
+					_ = cursor.Close()
+					if contains(dbNames, "veidemann") {
+						return nil
+					}
+				}
+			}
+			time.Sleep(5 * time.Second)
+		}
+	}
+}
+
+func (c *Connection) checkTablesExists(ctx context.Context) error {
+	var err error
+	var cursor *r.Cursor
+	for {
+		select {
+		case <-ctx.Done():
+			return fmt.Errorf("could not find database veidemann")
+		default:
+			if cursor, err = r.TableList().Run(c.DbSession); err == nil {
+				var tableNames []string
+				if err = cursor.All(&tableNames); err == nil {
+					_ = cursor.Close()
+					if contains(tableNames, "page_log", "crawl_log", "uri_queue", "config", "job_executions") {
+						return nil
+					}
+				}
+			}
+			time.Sleep(5 * time.Second)
+		}
+	}
+}
+
+func contains(list []string, item ...string) bool {
+	sort.Strings(list)
+	for _, s := range item {
+		i := sort.SearchStrings(list, s)
+		if i >= len(list) || list[i] != s {
+			return false
+		}
+	}
+	return true
 }
