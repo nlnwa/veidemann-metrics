@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package exporter
+package rethinkdb
 
 import (
 	"context"

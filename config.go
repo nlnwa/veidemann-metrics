@@ -28,6 +28,8 @@ const (
 	defaultDbName        = "veidemann"
 	defaultDbUser        = "admin"
 	defaultDbPassword    = "admin"
+	defaultFrontierHost  = "veidemann-frontier"
+	defaultFrontierPort  = 7700
 )
 
 // Config configurations for exporter
@@ -41,6 +43,9 @@ type Config struct {
 	DbUser     string
 	DbPassword string
 	DbName     string
+
+	FrontierHost string
+	FrontierPort int
 }
 
 // NewConfig creates a new config object from command line args
@@ -55,6 +60,9 @@ func NewConfig() *Config {
 	flag.StringVar(&c.DbName, "dbname", defaultDbName, "DB schema name")
 	flag.StringVar(&c.DbUser, "dbuser", defaultDbUser, "DB user name")
 	flag.StringVar(&c.DbPassword, "dbpassword", defaultDbPassword, "DB password")
+
+	flag.StringVar(&c.FrontierHost, "frontierhostname", defaultFrontierHost, "Frontier host")
+	flag.IntVar(&c.FrontierPort, "frontier-port", defaultFrontierPort, "Frontier port")
 
 	flag.Parse()
 
