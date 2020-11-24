@@ -1,4 +1,4 @@
-package exporter
+package rethinkdb
 
 import "testing"
 

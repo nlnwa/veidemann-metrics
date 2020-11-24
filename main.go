@@ -19,7 +19,9 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/nlnwa/veidemann-metrics/exporter"
+	"github.com/nlnwa/veidemann-metrics/pkg/client/frontier"
+	"github.com/nlnwa/veidemann-metrics/pkg/client/rethinkdb"
+	"github.com/nlnwa/veidemann-metrics/pkg/exporter"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"log"
 	"net/http"
@@ -37,13 +39,20 @@ const indexContent = `<html>
 
 func main() {
 	config := NewConfig()
-	conn := exporter.NewConnection(config.DbHost, config.DbPort, config.DbUser, config.DbPassword, config.DbName)
+	db := rethinkdb.NewConnection(config.DbHost, config.DbPort, config.DbUser, config.DbPassword, config.DbName)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	defer cancel()
-	if err := conn.Connect(ctx); err != nil {
+	if err := db.Connect(ctx); err != nil {
 		log.Fatal(err)
 	}
-	exp := exporter.New(conn)
+
+	fCtx, fCancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer fCancel()
+	f := frontier.New(config.FrontierHost, config.FrontierPort)
+	if err := f.Connect(fCtx); err != nil {
+		log.Fatal(err)
+	}
+	exp := exporter.New(db, f)
 	exp.Run()
 
 	// Serve metrics
