@@ -28,7 +28,10 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"net/http"
+	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 	"time"
 )
 
@@ -104,13 +107,21 @@ func main() {
 	exp := metrics.New(db, f)
 	exp.Run(30 * time.Second)
 
-	// Serve metrics
 	http.Handle("/metrics", promhttp.Handler())
-	log.Info().
-		Str("host", viper.GetString("host")).
-		Int("port", viper.GetInt("port")).
-		Msg("Server listening")
-	err := http.ListenAndServe(fmt.Sprintf("%s:%d", viper.GetString("host"), viper.GetInt("port")), nil)
+	addr := fmt.Sprintf("%s:%d", viper.GetString("host"), viper.GetInt("port"))
+	server := &http.Server{Addr: addr}
+
+	go func() {
+		signals := make(chan os.Signal)
+		signal.Notify(signals, os.Interrupt, syscall.SIGTERM)
+		sig := <-signals
+		log.Info().Str("signal", sig.String()).Msg("Shutting down")
+		_ = server.Close()
+	}()
+
+	// Serve metrics
+	log.Info().Str("address", addr).Msg("Server listening")
+	err := server.ListenAndServe()
 	if err != http.ErrServerClosed {
 		log.Err(err).Msg("")
 	}
