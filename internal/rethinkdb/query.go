@@ -73,13 +73,8 @@ func (qc *Query) WalkLatestJobExecutionForCrawlJobs(ctx context.Context, fn func
 				OrderBy(r.OrderByOpts{Index: r.Desc("jobId_startTime")}).
 				Between([]r.Term{job.Field("id"), r.MinVal}, []r.Term{job.Field("id"), r.MaxVal}).
 				Limit(1).
-				// replace jobId with job name
-				// .map(d => d.merge({
-				// executionsState: d('executionsState').concatMap(_ => _.coerceTo('array')).coerceTo('object')
-				// }))
 				Map(func(jes r.Term) interface{} {
 					return jes.Merge(map[string]interface{}{
-						"jobId": job.Field("meta").Field("name"),
 						"executionsState": jes.Field("executionsState").
 							ConcatMap(func(state r.Term) interface{} {
 								return state.CoerceTo("array")
