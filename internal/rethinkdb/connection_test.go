@@ -2,7 +2,7 @@ package rethinkdb
 
 import "testing"
 
-func Test_contains(t *testing.T) {
+func TestContains(t *testing.T) {
 	type args struct {
 		list []string
 		item []string
