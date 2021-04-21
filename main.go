@@ -35,6 +35,15 @@ import (
 	"time"
 )
 
+const indexContent = `<!DOCTYPE html>
+<html lang="en">
+<head><title>Veidemann Exporter</title></head>
+<body>
+<h1>Veidemann Exporter</h1>
+<p><a href="/metrics">Metrics</a></p>
+</body>
+</html>`
+
 func main() {
 	pflag.String("host", "", "Host")
 	pflag.Int("port", 9301, "Port")
@@ -107,6 +116,9 @@ func main() {
 	exp := metrics.New(db, f)
 	exp.Run(30 * time.Second)
 
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(indexContent))
+	})
 	http.Handle("/metrics", promhttp.Handler())
 	addr := fmt.Sprintf("%s:%d", viper.GetString("host"), viper.GetInt("port"))
 	server := &http.Server{Addr: addr}
