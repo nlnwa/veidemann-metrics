@@ -80,6 +80,7 @@ func (qc *Query) WalkLatestJobExecutionForCrawlJobs(ctx context.Context, fn func
 								return state.CoerceTo("array")
 							}).
 							CoerceTo("object"),
+						"jobId": job.Field("meta").Field("name"),
 					})
 				}).
 				Nth(0).
