@@ -1,9 +1,10 @@
 package rethinkdb
 
 import (
+	"testing"
+
 	frontierV1 "github.com/nlnwa/veidemann-api/go/frontier/v1"
 	"google.golang.org/protobuf/encoding/protojson"
-	"testing"
 )
 
 func TestUnmarshal(t *testing.T) {
@@ -35,7 +36,7 @@ func TestUnmarshal(t *testing.T) {
 
 	var jes frontierV1.JobExecutionStatus
 	if err := (protojson.UnmarshalOptions{AllowPartial: true}).Unmarshal([]byte(jesJSON), &jes); err != nil {
-		t.Errorf("failed to unmarshal json to job execution status: %w", err)
+		t.Errorf("failed to unmarshal json to job execution status: %v", err)
 	}
 
 }
