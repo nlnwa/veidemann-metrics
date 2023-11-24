@@ -44,7 +44,6 @@ func (ac *grpcClient) Close() {
 	if ac.ClientConn != nil {
 		_ = ac.ClientConn.Close()
 	}
-	return
 }
 
 type Client struct {
