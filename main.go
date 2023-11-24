@@ -19,6 +19,13 @@ package main
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"os"
+	"os/signal"
+	"strings"
+	"syscall"
+	"time"
+
 	"github.com/nlnwa/veidemann-metrics/internal/frontier"
 	"github.com/nlnwa/veidemann-metrics/internal/logger"
 	"github.com/nlnwa/veidemann-metrics/internal/metrics"
@@ -27,12 +34,6 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
-	"net/http"
-	"os"
-	"os/signal"
-	"strings"
-	"syscall"
-	"time"
 )
 
 const indexContent = `<!DOCTYPE html>
@@ -124,7 +125,7 @@ func main() {
 	server := &http.Server{Addr: addr}
 
 	go func() {
-		signals := make(chan os.Signal)
+		signals := make(chan os.Signal, 2)
 		signal.Notify(signals, os.Interrupt, syscall.SIGTERM)
 		sig := <-signals
 		log.Info().Str("signal", sig.String()).Msg("Shutting down")

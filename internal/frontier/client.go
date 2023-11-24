@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"github.com/nlnwa/veidemann-api/go/frontier/v1"
 	"google.golang.org/grpc"
@@ -31,7 +32,7 @@ type grpcClient struct {
 
 func (ac *grpcClient) Connect(ctx context.Context) error {
 	conn, err := grpc.DialContext(ctx, ac.address,
-		grpc.WithInsecure(),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithBlock())
 	if err != nil {
 		return fmt.Errorf("failed to dial %s: %w", ac.address, err)
@@ -44,7 +45,6 @@ func (ac *grpcClient) Close() {
 	if ac.ClientConn != nil {
 		_ = ac.ClientConn.Close()
 	}
-	return
 }
 
 type Client struct {

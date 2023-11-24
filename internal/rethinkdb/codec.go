@@ -19,12 +19,13 @@ package rethinkdb
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
+	"time"
+
 	frontierV1 "github.com/nlnwa/veidemann-api/go/frontier/v1"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 	"gopkg.in/rethinkdb/rethinkdb-go.v6/encoding"
-	"reflect"
-	"time"
 )
 
 var decodeJobExecutionStatus = func(encoded interface{}, value reflect.Value) error {
@@ -39,7 +40,7 @@ var decodeJobExecutionStatus = func(encoded interface{}, value reflect.Value) er
 		return fmt.Errorf("failed to unmarshal json to job execution status: %w", err)
 	}
 
-	value.Set(reflect.ValueOf(jes))
+	value.Set(reflect.ValueOf(&jes).Elem())
 
 	return nil
 }
@@ -67,7 +68,10 @@ func init() {
 	encoding.SetTypeEncoding(
 		reflect.TypeOf(map[string]interface{}{}),
 		func(value interface{}) (i interface{}, err error) {
-			m := value.(map[string]interface{})
+			m, ok := value.(map[string]interface{})
+			if !ok {
+				return nil, fmt.Errorf("value is not a map[string]interface{}")
+			}
 			for k, v := range m {
 				switch t := v.(type) {
 				case string:
