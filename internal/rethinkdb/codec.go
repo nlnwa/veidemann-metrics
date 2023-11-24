@@ -40,7 +40,7 @@ var decodeJobExecutionStatus = func(encoded interface{}, value reflect.Value) er
 		return fmt.Errorf("failed to unmarshal json to job execution status: %w", err)
 	}
 
-	value.Set(reflect.ValueOf(jes))
+	value.Set(reflect.ValueOf(&jes).Elem())
 
 	return nil
 }
