@@ -9,7 +9,7 @@ COPY . .
 
 RUN CGO_ENABLED=0 GOOS=linux go build -o /go/bin/veidemann-metrics .
 
-FROM gcr.io/distroless/static-debian10
+FROM gcr.io/distroless/static-debian12:nonroot
 COPY --from=build /go/bin/veidemann-metrics /
 
 ENTRYPOINT ["/veidemann-metrics"]
