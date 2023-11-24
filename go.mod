@@ -3,7 +3,6 @@ module github.com/nlnwa/veidemann-metrics
 go 1.15
 
 require (
-	github.com/golang/protobuf v1.5.3
 	github.com/nlnwa/veidemann-api/go v1.0.0
 	github.com/prometheus/client_golang v1.17.0
 	github.com/prometheus/common v0.45.0

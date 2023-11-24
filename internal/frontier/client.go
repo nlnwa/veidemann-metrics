@@ -18,7 +18,8 @@ package frontier
 import (
 	"context"
 	"fmt"
-	"github.com/golang/protobuf/ptypes/empty"
+
+	"google.golang.org/protobuf/types/known/emptypb"
 	"github.com/nlnwa/veidemann-api/go/frontier/v1"
 	"google.golang.org/grpc"
 )
@@ -69,7 +70,7 @@ func (f *Client) Connect(ctx context.Context) error {
 }
 
 func (f *Client) QueueCountTotal(ctx context.Context) (int64, error) {
-	res, err := f.FrontierClient.QueueCountTotal(ctx, &empty.Empty{})
+	res, err := f.FrontierClient.QueueCountTotal(ctx, &emptypb.Empty{})
 	if err != nil {
 		return 0, err
 	}
