@@ -17,6 +17,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -129,7 +130,7 @@ func main() {
 	// Serve metrics
 	log.Info().Str("address", addr).Msg("Server listening")
 	err = server.ListenAndServe()
-	if err != http.ErrServerClosed {
+	if errors.Is(err, http.ErrServerClosed) {
 		log.Err(err).Msg("")
 	}
 }
