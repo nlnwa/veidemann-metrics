@@ -17,56 +17,20 @@ package frontier
 
 import (
 	"context"
-	"fmt"
 
-	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/protobuf/types/known/emptypb"
 	"github.com/nlnwa/veidemann-api/go/frontier/v1"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-type grpcClient struct {
-	address string
-	*grpc.ClientConn
-}
-
-func (ac *grpcClient) Connect(ctx context.Context) error {
-	conn, err := grpc.DialContext(ctx, ac.address,
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithBlock())
-	if err != nil {
-		return fmt.Errorf("failed to dial %s: %w", ac.address, err)
-	}
-	ac.ClientConn = conn
-	return nil
-}
-
-func (ac *grpcClient) Close() {
-	if ac.ClientConn != nil {
-		_ = ac.ClientConn.Close()
-	}
-}
-
 type Client struct {
-	*grpcClient
 	frontier.FrontierClient
 }
 
-func New(host string, port int) *Client {
+func New(conn *grpc.ClientConn) *Client {
 	return &Client{
-		grpcClient: &grpcClient{
-			address: fmt.Sprintf("%s:%d", host, port),
-		},
+		FrontierClient: frontier.NewFrontierClient(conn),
 	}
-}
-
-func (f *Client) Connect(ctx context.Context) error {
-	err := f.grpcClient.Connect(ctx)
-	if err != nil {
-		return err
-	}
-	f.FrontierClient = frontier.NewFrontierClient(f.ClientConn)
-	return nil
 }
 
 func (f *Client) QueueCountTotal(ctx context.Context) (int64, error) {
