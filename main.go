@@ -17,7 +17,7 @@
 package main
 
 import (
-	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -34,6 +34,8 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 const indexContent = `<!DOCTYPE html>
@@ -98,23 +100,16 @@ func main() {
 		log.Fatal().Err(err).Msg("Database is not initialized")
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
-	defer cancel()
-	f := frontier.New(viper.GetString("frontier-host"), viper.GetInt("frontier-port"))
-	if err := f.Connect(ctx); err != nil {
-		log.Fatal().
-			Err(err).
-			Str("host", viper.GetString("frontier-host")).
-			Int("port", viper.GetInt("frontier-port")).
-			Msg("Failed to connect to Frontier")
+	frontierAddress := fmt.Sprintf("%s:%d", viper.GetString("frontier-host"), viper.GetInt("frontier-port"))
+	conn, err := grpc.NewClient(frontierAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Fatal().Err(err).Str("address", frontierAddress).Msg("Failed to create frontier client")
 	}
-	defer f.Close()
-	log.Info().
-		Str("host", viper.GetString("frontier-host")).
-		Int("port", viper.GetInt("frontier-port")).
-		Msg("Connected to Frontier")
+	defer conn.Close()
 
-	exp := metrics.New(db, f)
+	log.Info().Str("address", frontierAddress).Msg("Frontier channel created")
+
+	exp := metrics.New(db, frontier.New(conn))
 	exp.Run(30 * time.Second)
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -134,8 +129,8 @@ func main() {
 
 	// Serve metrics
 	log.Info().Str("address", addr).Msg("Server listening")
-	err := server.ListenAndServe()
-	if err != http.ErrServerClosed {
+	err = server.ListenAndServe()
+	if errors.Is(err, http.ErrServerClosed) {
 		log.Err(err).Msg("")
 	}
 }

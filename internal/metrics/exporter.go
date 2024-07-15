@@ -40,8 +40,8 @@ func New(rethinkdb *rethinkdb.Query, frontier *frontier.Client) *Exporter {
 
 func (e *Exporter) Run(interval time.Duration) {
 	registerCollectors(e.collectUriQueueLength)
-	go e.collectJobStatusJob()
 	go func() {
+		e.collectJobStatusJob()
 		for range time.Tick(interval) {
 			e.collectJobStatusJob()
 		}
