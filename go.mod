@@ -8,16 +8,15 @@ require (
 	github.com/prometheus/common v0.45.0
 	github.com/rs/zerolog v1.31.0
 	github.com/spf13/pflag v1.0.5
-	github.com/spf13/viper v1.18.1
-	google.golang.org/grpc v1.59.0
-	google.golang.org/protobuf v1.31.0
+	github.com/spf13/viper v1.19.0
+	google.golang.org/grpc v1.62.1
+	google.golang.org/protobuf v1.33.0
 	gopkg.in/rethinkdb/rethinkdb-go.v6 v6.2.2
 )
 
 require (
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/opentracing/opentracing-go v1.2.0 // indirect
-	github.com/prometheus/client_model v0.5.0 // indirect
 	github.com/prometheus/procfs v0.12.0 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
