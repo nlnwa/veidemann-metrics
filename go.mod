@@ -5,7 +5,7 @@ go 1.15
 require (
 	github.com/nlnwa/veidemann-api/go v1.0.0
 	github.com/prometheus/client_golang v1.19.1
-	github.com/prometheus/common v0.48.0
+	github.com/prometheus/common v0.55.0
 	github.com/rs/zerolog v1.31.0
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.19.0
